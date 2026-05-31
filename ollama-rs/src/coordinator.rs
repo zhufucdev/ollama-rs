@@ -62,6 +62,17 @@ impl<C: ChatHistory> Coordinator<C> {
         self
     }
 
+    pub fn add_tool_holder(
+        mut self,
+        name: impl ToString,
+        info: ToolInfo,
+        holder: Box<dyn ToolHolder>,
+    ) -> Self {
+        self.tool_infos.push(info);
+        self.tools.insert(name.to_string(), holder);
+        self
+    }
+
     pub fn format(mut self, format: FormatType) -> Self {
         self.format = Some(format);
         self
