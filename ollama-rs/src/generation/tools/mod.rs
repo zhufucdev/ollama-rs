@@ -32,7 +32,7 @@ pub trait Parameters: DeserializeOwned + JsonSchema {}
 
 impl<P: DeserializeOwned + JsonSchema> Parameters for P {}
 
-pub(crate) trait ToolHolder: Send + Sync {
+pub trait ToolHolder: Send + Sync {
     fn call(
         &mut self,
         parameters: Value,
