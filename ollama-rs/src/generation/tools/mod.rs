@@ -71,7 +71,7 @@ pub struct ToolInfo {
 }
 
 impl ToolInfo {
-    pub(crate) fn new<P: Parameters, T: Tool<Params = P>>() -> Self {
+    pub fn new<P: Parameters, T: Tool<Params = P>>() -> Self {
         let mut settings = SchemaSettings::draft07();
         settings.inline_subschemas = true;
         let generator = settings.into_generator();
