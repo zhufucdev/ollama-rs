@@ -15,7 +15,7 @@ pub type Result<T> = std::result::Result<T, OllamaError>;
 /// Each variant corresponds to a different kind of error.
 #[derive(Error, Debug)]
 pub enum OllamaError {
-    #[error("Error calling tool")]
+    #[error("Error calling tool: {0}")]
     ToolCallError(#[from] ToolCallError),
     #[error("Ollama JSON error")]
     JsonError(#[from] serde_json::Error),
@@ -48,6 +48,6 @@ pub enum ToolCallError {
         "Could not convert tool arguments from Ollama into what the tool expected, or vice versa"
     )]
     InvalidToolArguments(#[from] serde_json::Error),
-    #[error("Tool errored internally when it was called")]
+    #[error("Tool errored internally when it was called: {0}")]
     InternalToolError(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
