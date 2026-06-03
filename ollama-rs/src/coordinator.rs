@@ -152,8 +152,7 @@ impl<C: ChatHistory> Coordinator<C> {
 
                 let resp = tool
                     .call(call.function.arguments)
-                    .await
-                    .map_err(crate::error::ToolCallError::InternalToolError)?;
+                    .await?;
 
                 if self.debug {
                     eprintln!("Tool response: {}", &resp);

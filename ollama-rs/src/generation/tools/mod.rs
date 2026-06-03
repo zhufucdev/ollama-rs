@@ -8,6 +8,8 @@ use schemars::{generate::SchemaSettings, JsonSchema, Schema};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::error::ToolCallError;
+
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 /// It's highly recommended that the `JsonSchema` has descriptions for all attributes.
@@ -22,10 +24,7 @@ pub trait Tool: Send + Sync {
     /// Call the tool.
     /// Note that returning an Err will cause it to be bubbled up. If you want the LLM to handle the error,
     /// return that error as a string.
-    fn call(
-        &mut self,
-        parameters: Self::Params,
-    ) -> impl Future<Output = Result<String>> + Send;
+    fn call(&mut self, parameters: Self::Params) -> impl Future<Output = Result<String>> + Send;
 }
 
 pub trait Parameters: DeserializeOwned + JsonSchema {}
@@ -36,14 +35,14 @@ pub trait ToolHolder: Send + Sync {
     fn call(
         &mut self,
         parameters: Value,
-    ) -> Pin<Box<dyn Future<Output = Result<String>> + '_ + Send>>;
+    ) -> Pin<Box<dyn Future<Output = std::result::Result<String, ToolCallError>> + '_ + Send>>;
 }
 
 impl<T: Tool> ToolHolder for T {
     fn call(
         &mut self,
         parameters: Value,
-    ) -> Pin<Box<dyn Future<Output = Result<String>> + '_ + Send>> {
+    ) -> Pin<Box<dyn Future<Output = std::result::Result<String, ToolCallError>> + '_ + Send>> {
         Box::pin(async move {
             // Json returned from the model can sometimes be in different formats, see https://github.com/pepperoni21/ollama-rs/issues/210
             // This is a work-around for this issue.
@@ -56,9 +55,12 @@ impl<T: Tool> ToolHolder for T {
                 },
             };
 
-            let param = serde_json::from_value(param_value)?;
+            let param = serde_json::from_value(param_value)
+                .map_err(|e| ToolCallError::InvalidToolArguments(e))?;
 
-            T::call(self, param).await
+            T::call(self, param)
+                .await
+                .map_err(|e| ToolCallError::InternalToolError(e))
         })
     }
 }
